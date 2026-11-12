@@ -31,3 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Configuracoes locais do IntelliJ
+.idea/
+*.iml
+.run/
+
+# Arquivos com variaveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Arquivos com credenciais locais
+application-local.properties
+
+# Arquivos temporarios
+target/
