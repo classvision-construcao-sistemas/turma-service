@@ -6,27 +6,20 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "cv03_instituicoes")
-public class Intituicao {
+public class Instituicao {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
-
-    @Column(name = "nome", nullable = false)
+    @Column(nullable = false)
     private String nome;
-
-    @Column(name = "cnpj", nullable = false, length = 14)
+    @Column(nullable = false, length = 14)
     private String cnpj;
-
-    @Column(name = "telefone", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String telefone;
-
-    @Column(name = "situacao", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String situacao;
-
-    @Column(name = "criado_em", nullable = false)
+    @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
-
     @Column(name = "atualizado_em")
     private Instant atualizadoEm;
 
@@ -85,5 +78,4 @@ public class Intituicao {
     public void setAtualizadoEm(Instant atualizadoEm) {
         this.atualizadoEm = atualizadoEm;
     }
-
 }

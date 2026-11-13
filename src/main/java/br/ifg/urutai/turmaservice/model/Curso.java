@@ -7,16 +7,13 @@ import jakarta.persistence.*;
 public class Curso {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
-
-    @Column(name = "codigo", nullable = false, length = 50)
-    private String codigo;
-
-    @Column(name = "nome", nullable = false)
+    @Column(nullable = false, length = 50)
+    private
+    String codigo;
+    @Column(nullable = false)
     private String nome;
-
-    @Column(name = "situacao", nullable = false, length = 30)
+    @Column(nullable = false, length = 30)
     private String situacao;
 
     public Long getId() {
@@ -50,5 +47,4 @@ public class Curso {
     public void setSituacao(String situacao) {
         this.situacao = situacao;
     }
-
 }
