@@ -1,16 +1,13 @@
 package br.ifg.urutai.turmaservice.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.*;
 
 import java.util.Objects;
 
 @Embeddable
 public class VinculoAluno {
-
     @Column(name = "aluno_id", nullable = false)
     private Long alunoId;
-
     @Column(name = "situacao", nullable = false, length = 30)
     private String situacao;
 
@@ -39,12 +36,10 @@ public class VinculoAluno {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof VinculoAluno that)) return false;
-
-        return Objects.equals(alunoId, that.alunoId)
-                && Objects.equals(situacao, that.situacao);
+    public boolean equals(Object outro) {
+        if (this == outro) return true;
+        if (!(outro instanceof VinculoAluno vinculo)) return false;
+        return Objects.equals(alunoId, vinculo.alunoId) && Objects.equals(situacao, vinculo.situacao);
     }
 
     @Override

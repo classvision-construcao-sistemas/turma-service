@@ -3,46 +3,32 @@ package br.ifg.urutai.turmaservice.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(name = "cv05_turmas")
 public class Turma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
-
     @Column(name = "ano", columnDefinition = "smallint UNSIGNED not null")
     private Integer ano;
-
-    @Column(name = "nome", nullable = false)
+    @Column(nullable = false)
     private String nome;
-
-    @Column(name = "turno", nullable = false, length = 30)
+    @Column(nullable = false, length = 30)
     private String turno;
-
-    @Column(name = "sala", length = 50)
+    @Column(length = 50)
     private String sala;
-
     @Column(name = "inicio_aula")
     private LocalDate inicioAula;
-
     @Column(name = "fim_aula")
     private LocalDate fimAula;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bigint_curso_id", nullable = false)
-    private Curso bigintCurso;
-
+    private Curso curso;
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "cv09_turmas_alunos",
-            joinColumns = @JoinColumn(name = "bigint_turma_id")
-    )
+    @CollectionTable(name = "cv09_turmas_alunos", joinColumns = @JoinColumn(name = "bigint_turma_id"))
     private List<VinculoAluno> alunos = new ArrayList<>();
-
 
     public Long getId() {
         return id;
@@ -100,12 +86,12 @@ public class Turma {
         this.fimAula = fimAula;
     }
 
-    public Curso getBigintCurso() {
-        return bigintCurso;
+    public Curso getCurso() {
+        return curso;
     }
 
-    public void setBigintCurso(Curso bigintCurso) {
-        this.bigintCurso = bigintCurso;
+    public void setCurso(Curso curso) {
+        this.curso = curso;
     }
 
     public List<VinculoAluno> getAlunos() {
