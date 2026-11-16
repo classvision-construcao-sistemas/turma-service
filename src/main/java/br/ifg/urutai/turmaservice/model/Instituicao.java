@@ -20,6 +20,7 @@ public class Instituicao {
     private String situacao;
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
+    //teste
     @Column(name = "atualizado_em")
     private Instant atualizadoEm;
 
