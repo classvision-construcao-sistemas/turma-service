@@ -1,3 +1,4 @@
+
 package br.ifg.urutai.turmaservice.model;
 
 import jakarta.persistence.*;
@@ -5,16 +6,24 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "cv04_cursos")
 public class Curso {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
-    @Column(nullable = false, length = 50)
-    private
-    String codigo;
-    @Column(nullable = false)
+
+    @Column(name = "codigo", nullable = false, length = 50)
+    private String codigo;
+
+    @Column(name = "nome", nullable = false)
     private String nome;
-    @Column(nullable = false, length = 30)
+
+    @Column(name = "situacao", nullable = false, length = 30)
     private String situacao;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bigint_instituicao_id", nullable = false)
+    private Instituicao instituicao;
 
     public Long getId() {
         return id;
@@ -46,5 +55,13 @@ public class Curso {
 
     public void setSituacao(String situacao) {
         this.situacao = situacao;
+    }
+
+    public Instituicao getInstituicao() {
+        return instituicao;
+    }
+
+    public void setInstituicao(Instituicao instituicao) {
+        this.instituicao = instituicao;
     }
 }
