@@ -6,6 +6,7 @@ import br.ifg.urutai.turmaservice.model.Curso;
 import br.ifg.urutai.turmaservice.model.Instituicao;
 import br.ifg.urutai.turmaservice.repository.*;
 import br.ifg.urutai.turmaservice.exception.*;
+import br.ifg.urutai.turmaservice.security.ControleAcessoInstituicao;
 import br.ifg.urutai.turmaservice.util.DataMapper;
 
 import org.springframework.stereotype.Service;
@@ -19,32 +20,47 @@ public class CursoService {
     private final CursoRepository cursoRepository;
     private final TurmaRepository turmaRepository;
     private final InstituicaoRepository instituicaoRepository;
+    private final ControleAcessoInstituicao controleAcesso;
 
     public CursoService(
             CursoRepository cursoRepository,
             TurmaRepository turmaRepository,
-            InstituicaoRepository instituicaoRepository) {
+            InstituicaoRepository instituicaoRepository,
+            ControleAcessoInstituicao controleAcesso) {
 
         this.cursoRepository = cursoRepository;
         this.turmaRepository = turmaRepository;
         this.instituicaoRepository = instituicaoRepository;
+        this.controleAcesso = controleAcesso;
     }
 
     @Transactional(readOnly = true)
     public List<CursoResposta> listarTodos() {
-        return cursoRepository.findAll()
-                .stream()
+
+        // Administrador geral ve todas as instituicoes;
+        // demais perfis apenas a propria.
+        List<Curso> cursos = controleAcesso.administradorGeral()
+                ? cursoRepository.findAll()
+                : cursoRepository.findAllByInstituicao_Id(
+                        controleAcesso.instituicaoId()
+                );
+
+        return cursos.stream()
                 .map(this::converter)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public CursoResposta buscarPorId(Long id) {
-        return converter(obterCurso(id));
+        return converter(obterCursoAutorizado(id));
     }
 
     @Transactional
     public CursoResposta cadastrar(CursoRequisicao dados) {
+
+        controleAcesso.validarInstituicao(
+                dados.getInstituicaoId()
+        );
 
         String codigo = dados.getCodigo().trim();
 
@@ -73,7 +89,12 @@ public class CursoService {
             Long id,
             CursoRequisicao dados) {
 
-        Curso curso = obterCurso(id);
+        Curso curso = obterCursoAutorizado(id);
+
+        // Impede mover o curso para outra instituicao.
+        controleAcesso.validarInstituicao(
+                dados.getInstituicaoId()
+        );
 
         String codigo = dados.getCodigo().trim();
 
@@ -99,7 +120,7 @@ public class CursoService {
     @Transactional
     public void excluir(Long id) {
 
-        Curso curso = obterCurso(id);
+        Curso curso = obterCursoAutorizado(id);
 
         if (turmaRepository.existsByCurso_Id(id)) {
             throw new RegraNegocioException(
@@ -118,6 +139,17 @@ public class CursoService {
                                 "Curso não encontrado: " + id
                         )
                 );
+    }
+
+    private Curso obterCursoAutorizado(Long id) {
+
+        Curso curso = obterCurso(id);
+
+        controleAcesso.validarInstituicao(
+                curso.getInstituicao().getId()
+        );
+
+        return curso;
     }
 
     private Instituicao obterInstituicao(Long id) {

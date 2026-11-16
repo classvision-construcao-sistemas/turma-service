@@ -50,10 +50,14 @@ public class SecurityConfiguration {
                         // Excluir cursos e turmas.
                         .requestMatchers(HttpMethod.DELETE, "/cursos/*", "/turmas/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR")
 
-                        // Consultas: qualquer usuario autenticado.
+                        // Consulta de cursos: perfis da instituicao.
+                        // O filtro por instituicao e feito no CursoService.
+                        .requestMatchers(HttpMethod.GET, "/cursos", "/cursos/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR", "PROFESSOR", "SECRETARIO", "ASSISTENTE")
+
+                        // Consultas de turmas: qualquer usuario autenticado.
                         // Habilitar somente junto aos filtros
                         // por instituicao das etapas seguintes.
-                        .requestMatchers(HttpMethod.GET, "/cursos", "/cursos/**", "/turmas", "/turmas/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/turmas", "/turmas/**").authenticated()
 
                         // Não permitir rotas desconhecidas.
                         .anyRequest().denyAll())
