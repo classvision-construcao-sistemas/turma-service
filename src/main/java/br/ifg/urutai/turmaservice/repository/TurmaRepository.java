@@ -16,5 +16,8 @@ public interface TurmaRepository extends JpaRepository<Turma, Long> {
     @Query("select distinct turma from Turma turma join fetch turma.curso left join fetch turma.alunos where turma.curso.id=:cursoId")
     List<Turma> buscarPorCursoComRelacionamentos(@Param("cursoId") Long cursoId);
 
+    @Query("select distinct turma from Turma turma join fetch turma.curso curso left join fetch turma.alunos where curso.instituicao.id=:instituicaoId")
+    List<Turma> buscarPorInstituicaoComRelacionamentos(@Param("instituicaoId") Long instituicaoId);
+
     boolean existsByCurso_Id(Long cursoId);
 }
