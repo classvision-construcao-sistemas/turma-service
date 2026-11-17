@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TurmaService {
@@ -90,13 +91,13 @@ public class TurmaService {
 
         Curso curso = null;
 
-        // Valida o curso de destino, caso informado.
         if (dados.getCursoId() != null) {
+
             curso = obterCursoAutorizado(dados.getCursoId());
+
+            validarTransferenciaCurso(turma, curso);
         }
 
-        // Considera os valores atuais caso uma
-        // das datas não tenha sido enviada.
         LocalDate inicio = dados.getInicioAula() != null ? dados.getInicioAula() : turma.getInicioAula();
 
         LocalDate fim = dados.getFimAula() != null ? dados.getFimAula() : turma.getFimAula();
@@ -106,7 +107,6 @@ public class TurmaService {
             throw new RegraNegocioException("O fim das aulas não pode anteceder o início");
         }
 
-        // Atualiza somente os campos informados.
         if (dados.getAno() != null) {
             turma.setAno(dados.getAno());
         }
@@ -131,8 +131,6 @@ public class TurmaService {
             turma.setFimAula(dados.getFimAula());
         }
 
-        // Altera o relacionamento apenas
-        // quando um curso foi informado.
         if (curso != null) {
             turma.setCurso(curso);
         }
@@ -238,9 +236,12 @@ public class TurmaService {
         }
     }
 
+
     private void configurarCampos(Turma turma, TurmaRequisicao dados) {
 
         Curso curso = obterCursoAutorizado(dados.getCursoId());
+
+        validarTransferenciaCurso(turma, curso);
 
         turma.setAno(dados.getAno());
         turma.setNome(dados.getNome().trim());
@@ -252,6 +253,7 @@ public class TurmaService {
         turma.setCurso(curso);
     }
 
+
     private TurmaResposta converter(Turma turma) {
 
         TurmaResposta resposta = DataMapper.parseObject(turma, TurmaResposta.class);
@@ -262,4 +264,23 @@ public class TurmaService {
 
         return resposta;
     }
+
+
+    private void validarTransferenciaCurso(Turma turma, Curso novoCurso) {
+
+        // No cadastro, a turma ainda não possui curso.
+        if (turma.getCurso() == null) {
+            return;
+        }
+
+        Long instituicaoAtual = turma.getCurso().getInstituicao().getId();
+
+        Long instituicaoDestino = novoCurso.getInstituicao().getId();
+
+        if (!Objects.equals(instituicaoAtual, instituicaoDestino)) {
+
+            throw new RegraNegocioException("Não é permitido transferir uma turma " + "para um curso de outra instituição");
+        }
+    }
+
 }
