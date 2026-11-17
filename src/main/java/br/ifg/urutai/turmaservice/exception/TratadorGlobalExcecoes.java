@@ -5,6 +5,8 @@ import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class TratadorGlobalExcecoes {
@@ -15,6 +17,14 @@ public class TratadorGlobalExcecoes {
  public ResponseEntity<ErroResposta> regraNegocio(RegraNegocioException erro,HttpServletRequest requisicao){return criar(HttpStatus.CONFLICT,erro.getMessage(),requisicao,Map.of());}
  @ExceptionHandler(DataIntegrityViolationException.class)
  public ResponseEntity<ErroResposta> integridade(DataIntegrityViolationException erro,HttpServletRequest requisicao){return criar(HttpStatus.CONFLICT,"Operação viola uma restrição do banco de dados",requisicao,Map.of());}
+ // Bloqueios dentro do controller/service: @PreAuthorize e ControleAcessoInstituicao.
+ @ExceptionHandler(AccessDeniedException.class)
+ public ResponseEntity<ErroResposta> acessoNegado(AccessDeniedException erro,HttpServletRequest requisicao){
+  String mensagem=erro instanceof AuthorizationDeniedException
+          ?"Acesso negado: perfil sem permissão para esta operação"
+          :erro.getMessage();
+  return criar(HttpStatus.FORBIDDEN,mensagem,requisicao,Map.of());
+ }
  @ExceptionHandler(MethodArgumentNotValidException.class)
  public ResponseEntity<ErroResposta> validacao(MethodArgumentNotValidException erro,HttpServletRequest requisicao){
   Map<String,String> campos=new LinkedHashMap<>();

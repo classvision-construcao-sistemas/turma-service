@@ -1,5 +1,6 @@
 package br.ifg.urutai.turmaservice.config;
 
+import br.ifg.urutai.turmaservice.security.RespostaErroSeguranca;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationConverter conversorJwt) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationConverter conversorJwt, RespostaErroSeguranca respostaErro) {
 
         http.csrf(AbstractHttpConfigurer::disable)
 
@@ -58,7 +59,13 @@ public class SecurityConfiguration {
                         // Não permitir rotas desconhecidas.
                         .anyRequest().denyAll())
 
-                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwt)));
+                // Respostas 401/403 no mesmo formato JSON dos demais erros.
+                .exceptionHandling(excecoes -> excecoes.authenticationEntryPoint(respostaErro).accessDeniedHandler(respostaErro))
+
+                .oauth2ResourceServer(oauth -> oauth
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwt))
+                        .authenticationEntryPoint(respostaErro)
+                        .accessDeniedHandler(respostaErro));
 
         return http.build();
     }
