@@ -65,7 +65,7 @@ public class TurmaController {
 
     @PutMapping("/{id}/alunos/{alunoId}")
     @Operation(summary = "Atualizar situação de aluno vinculado")
-    public TurmaResposta atualizarVinculo(@PathVariable Long id, @PathVariable Long alunoId, @Valid @RequestBody VinculoAlunoRequisicao dados) {
+    public TurmaResposta atualizarVinculo(@PathVariable Long id, @PathVariable Long alunoId, @Valid @RequestBody VinculoAlunoRequisicaoAtualizar dados) {
         return turmaService.atualizarVinculo(id, alunoId, dados);
     }
 

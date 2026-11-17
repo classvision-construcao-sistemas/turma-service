@@ -1,6 +1,8 @@
+
 package br.ifg.urutai.turmaservice.config;
 
 import br.ifg.urutai.turmaservice.security.RespostaErroSeguranca;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,52 +26,149 @@ import java.nio.charset.StandardCharsets;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationConverter conversorJwt, RespostaErroSeguranca respostaErro) {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationConverter conversorJwt,
+            RespostaErroSeguranca respostaErro
+    ) throws Exception {
 
-        http.csrf(AbstractHttpConfigurer::disable)
+        http
+                .csrf(AbstractHttpConfigurer::disable)
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Swagger: documentacao publica.
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Permite o tratamento interno de erros.
+                        .dispatcherTypeMatchers(
+                                DispatcherType.ERROR
+                        ).permitAll()
 
-                        // Vínculos de alunos: escrita.
-                        .requestMatchers(HttpMethod.POST, "/turmas/*/alunos").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR", "SECRETARIO")
+                        // Documentação Swagger.
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.PUT, "/turmas/*/alunos/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR", "SECRETARIO")
+                        // Gerenciamento de vínculos de alunos.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/turmas/*/alunos"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR",
+                                "SECRETARIO"
+                        )
 
-                        .requestMatchers(HttpMethod.DELETE, "/turmas/*/alunos/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR", "SECRETARIO")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/turmas/*/alunos/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR",
+                                "SECRETARIO"
+                        )
 
-                        // Criar cursos e turmas.
-                        .requestMatchers(HttpMethod.POST, "/cursos", "/turmas").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/turmas/*/alunos/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR",
+                                "SECRETARIO"
+                        )
 
-                        // Atualizar cursos e turmas.
-                        .requestMatchers(HttpMethod.PUT, "/cursos/*", "/turmas/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR")
+                        // Cadastro de cursos e turmas.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/cursos",
+                                "/turmas"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR"
+                        )
 
-                        // Excluir cursos e turmas.
-                        .requestMatchers(HttpMethod.DELETE, "/cursos/*", "/turmas/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR")
+                        // Atualização de cursos e turmas.
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/cursos/*",
+                                "/turmas/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR"
+                        )
 
-                        // Consulta de cursos: perfis da instituicao.
-                        // O filtro por instituicao e feito no CursoService.
-                        .requestMatchers(HttpMethod.GET, "/cursos", "/cursos/*").hasAnyRole("ADMINISTRADOR", "ADMIN_INSTITUICAO", "COORDENADOR", "PROFESSOR", "SECRETARIO", "ASSISTENTE")
+                        // Atualização parcial de cursos e turmas.
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/cursos/*",
+                                "/turmas/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR"
+                        )
 
-                        // Consultas de turmas: qualquer usuario autenticado.
-                        // Habilitar somente junto aos filtros
-                        // por instituicao das etapas seguintes.
-                        .requestMatchers(HttpMethod.GET, "/turmas", "/turmas/**").authenticated()
+                        // Exclusão de cursos e turmas.
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/cursos/*",
+                                "/turmas/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR"
+                        )
 
-                        // Não permitir rotas desconhecidas.
-                        .anyRequest().denyAll())
+                        // Consulta de cursos.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/cursos",
+                                "/cursos/*"
+                        ).hasAnyRole(
+                                "ADMINISTRADOR",
+                                "ADMIN_INSTITUICAO",
+                                "COORDENADOR",
+                                "PROFESSOR",
+                                "SECRETARIO",
+                                "ASSISTENTE"
+                        )
 
-                // Respostas 401/403 no mesmo formato JSON dos demais erros.
-                .exceptionHandling(excecoes -> excecoes.authenticationEntryPoint(respostaErro).accessDeniedHandler(respostaErro))
+                        // Consulta de turmas.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/turmas",
+                                "/turmas/**"
+                        ).authenticated()
 
-                .oauth2ResourceServer(oauth -> oauth
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwt))
+                        // Bloqueia endpoints desconhecidos.
+                        .anyRequest().denyAll()
+                )
+
+                // Tratamento de erros 401 e 403.
+                .exceptionHandling(excecoes -> excecoes
                         .authenticationEntryPoint(respostaErro)
-                        .accessDeniedHandler(respostaErro));
+                        .accessDeniedHandler(respostaErro)
+                )
+
+                // Validação do JWT.
+                .oauth2ResourceServer(oauth -> oauth
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(conversorJwt)
+                        )
+                        .authenticationEntryPoint(respostaErro)
+                        .accessDeniedHandler(respostaErro)
+                );
 
         return http.build();
     }
@@ -77,26 +176,35 @@ public class SecurityConfiguration {
     @Bean
     public JwtAuthenticationConverter conversorJwt() {
 
-        JwtGrantedAuthoritiesConverter autoridades = new JwtGrantedAuthoritiesConverter();
+        JwtGrantedAuthoritiesConverter autoridades =
+                new JwtGrantedAuthoritiesConverter();
 
         autoridades.setAuthoritiesClaimName("roles");
-
         autoridades.setAuthorityPrefix("");
 
-        JwtAuthenticationConverter conversor = new JwtAuthenticationConverter();
+        JwtAuthenticationConverter conversor =
+                new JwtAuthenticationConverter();
 
-        conversor.setJwtGrantedAuthoritiesConverter(autoridades);
+        conversor.setJwtGrantedAuthoritiesConverter(
+                autoridades
+        );
 
         return conversor;
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(@Value("${jwt.secret}") String segredo) {
+    public JwtDecoder jwtDecoder(
+            @Value("${jwt.secret}") String segredo
+    ) {
 
-        byte[] chave = segredo.getBytes(StandardCharsets.UTF_8);
+        byte[] chave = segredo.getBytes(
+                StandardCharsets.UTF_8
+        );
 
         if (chave.length < 32) {
-            throw new IllegalStateException("A chave JWT deve ter pelo menos 32 bytes");
+            throw new IllegalStateException(
+                    "A chave JWT deve ter pelo menos 32 bytes"
+            );
         }
 
         MacAlgorithm algoritmo;
@@ -115,8 +223,12 @@ public class SecurityConfiguration {
             nomeAlgoritmo = "HmacSHA256";
         }
 
-        SecretKeySpec chaveSecreta = new SecretKeySpec(chave, nomeAlgoritmo);
+        SecretKeySpec chaveSecreta =
+                new SecretKeySpec(chave, nomeAlgoritmo);
 
-        return NimbusJwtDecoder.withSecretKey(chaveSecreta).macAlgorithm(algoritmo).build();
+        return NimbusJwtDecoder
+                .withSecretKey(chaveSecreta)
+                .macAlgorithm(algoritmo)
+                .build();
     }
 }

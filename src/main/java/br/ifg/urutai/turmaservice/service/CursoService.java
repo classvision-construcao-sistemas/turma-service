@@ -1,4 +1,3 @@
-
 package br.ifg.urutai.turmaservice.service;
 
 import br.ifg.urutai.turmaservice.dto.*;
@@ -22,11 +21,7 @@ public class CursoService {
     private final InstituicaoRepository instituicaoRepository;
     private final ControleAcessoInstituicao controleAcesso;
 
-    public CursoService(
-            CursoRepository cursoRepository,
-            TurmaRepository turmaRepository,
-            InstituicaoRepository instituicaoRepository,
-            ControleAcessoInstituicao controleAcesso) {
+    public CursoService(CursoRepository cursoRepository, TurmaRepository turmaRepository, InstituicaoRepository instituicaoRepository, ControleAcessoInstituicao controleAcesso) {
 
         this.cursoRepository = cursoRepository;
         this.turmaRepository = turmaRepository;
@@ -37,17 +32,9 @@ public class CursoService {
     @Transactional(readOnly = true)
     public List<CursoResposta> listarTodos() {
 
-        // Administrador geral ve todas as instituicoes;
-        // demais perfis apenas a propria.
-        List<Curso> cursos = controleAcesso.administradorGeral()
-                ? cursoRepository.findAll()
-                : cursoRepository.findAllByInstituicao_Id(
-                        controleAcesso.instituicaoId()
-                );
+        List<Curso> cursos = controleAcesso.administradorGeral() ? cursoRepository.findAll() : cursoRepository.findAllByInstituicao_Id(controleAcesso.instituicaoId());
 
-        return cursos.stream()
-                .map(this::converter)
-                .toList();
+        return cursos.stream().map(this::converter).toList();
     }
 
     @Transactional(readOnly = true)
@@ -58,60 +45,47 @@ public class CursoService {
     @Transactional
     public CursoResposta cadastrar(CursoRequisicao dados) {
 
-        controleAcesso.validarInstituicao(
-                dados.getInstituicaoId()
-        );
+        controleAcesso.validarInstituicao(dados.getInstituicaoId());
 
         String codigo = dados.getCodigo().trim();
 
         if (cursoRepository.existsByCodigoIgnoreCase(codigo)) {
-            throw new RegraNegocioException(
-                    "Código de curso já cadastrado"
-            );
+            throw new RegraNegocioException("Código de curso já cadastrado");
         }
 
-        Instituicao instituicao = obterInstituicao(
-                dados.getInstituicaoId()
-        );
+        Instituicao instituicao = obterInstituicao(dados.getInstituicaoId());
 
-        Curso curso = DataMapper.parseObject(
-                dados, Curso.class
-        );
+        Curso curso = new Curso();
 
-        normalizarCampos(curso);
+        curso.setCodigo(codigo);
+        curso.setNome(dados.getNome().trim());
+        curso.setSituacao(dados.getSituacao().trim());
+
         curso.setInstituicao(instituicao);
 
         return converter(cursoRepository.save(curso));
     }
 
     @Transactional
-    public CursoResposta atualizar(
-            Long id,
-            CursoRequisicao dados) {
+    public CursoResposta atualizar(Long id, CursoRequisicao dados) {
 
         Curso curso = obterCursoAutorizado(id);
 
-        // Impede mover o curso para outra instituicao.
-        controleAcesso.validarInstituicao(
-                dados.getInstituicaoId()
-        );
+        controleAcesso.validarInstituicao(dados.getInstituicaoId());
 
         String codigo = dados.getCodigo().trim();
 
-        if (cursoRepository.existsByCodigoIgnoreCaseAndIdNot(
-                codigo, id)) {
-            throw new RegraNegocioException(
-                    "Código de curso já cadastrado"
-            );
+        if (cursoRepository.existsByCodigoIgnoreCaseAndIdNot(codigo, id)) {
+
+            throw new RegraNegocioException("Código de curso já cadastrado");
         }
 
-        Instituicao instituicao = obterInstituicao(
-                dados.getInstituicaoId()
-        );
+        Instituicao instituicao = obterInstituicao(dados.getInstituicaoId());
 
-        DataMapper.copiarPropriedades(dados, curso);
+        curso.setCodigo(codigo);
+        curso.setNome(dados.getNome().trim());
+        curso.setSituacao(dados.getSituacao().trim());
 
-        normalizarCampos(curso);
         curso.setInstituicao(instituicao);
 
         return converter(curso);
@@ -123,9 +97,7 @@ public class CursoService {
         Curso curso = obterCursoAutorizado(id);
 
         if (turmaRepository.existsByCurso_Id(id)) {
-            throw new RegraNegocioException(
-                    "Não é possível excluir um curso que possui turmas"
-            );
+            throw new RegraNegocioException("Não é possível excluir um curso que possui turmas");
         }
 
         cursoRepository.delete(curso);
@@ -133,49 +105,29 @@ public class CursoService {
 
     @Transactional(readOnly = true)
     public Curso obterCurso(Long id) {
-        return cursoRepository.findById(id)
-                .orElseThrow(() ->
-                        new RecursoNaoEncontradoException(
-                                "Curso não encontrado: " + id
-                        )
-                );
+
+        return cursoRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Curso não encontrado: " + id));
     }
 
     private Curso obterCursoAutorizado(Long id) {
 
         Curso curso = obterCurso(id);
 
-        controleAcesso.validarInstituicao(
-                curso.getInstituicao().getId()
-        );
+        controleAcesso.validarInstituicao(curso.getInstituicao().getId());
 
         return curso;
     }
 
     private Instituicao obterInstituicao(Long id) {
-        return instituicaoRepository.findById(id)
-                .orElseThrow(() ->
-                        new RecursoNaoEncontradoException(
-                                "Instituição não encontrada: " + id
-                        )
-                );
-    }
 
-    private void normalizarCampos(Curso curso) {
-        curso.setCodigo(curso.getCodigo().trim());
-        curso.setNome(curso.getNome().trim());
-        curso.setSituacao(curso.getSituacao().trim());
+        return instituicaoRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Instituição não encontrada: " + id));
     }
 
     private CursoResposta converter(Curso curso) {
 
-        CursoResposta resposta = DataMapper.parseObject(
-                curso, CursoResposta.class
-        );
+        CursoResposta resposta = DataMapper.parseObject(curso, CursoResposta.class);
 
-        resposta.setInstituicaoId(
-                curso.getInstituicao().getId()
-        );
+        resposta.setInstituicaoId(curso.getInstituicao().getId());
 
         return resposta;
     }

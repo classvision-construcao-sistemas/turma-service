@@ -1,4 +1,3 @@
-
 package br.ifg.urutai.turmaservice.service;
 
 import br.ifg.urutai.turmaservice.dto.*;
@@ -17,20 +16,15 @@ import java.util.List;
 @Service
 public class TurmaService {
 
-    private static final String GERENCIAR_TURMAS =
-            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR')";
+    private static final String GERENCIAR_TURMAS = "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR')";
 
-    private static final String GERENCIAR_VINCULOS =
-            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR', 'SECRETARIO')";
+    private static final String GERENCIAR_VINCULOS = "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR', 'SECRETARIO')";
 
     private final TurmaRepository turmaRepository;
     private final CursoService cursoService;
     private final ControleAcessoInstituicao controleAcesso;
 
-    public TurmaService(
-            TurmaRepository turmaRepository,
-            CursoService cursoService,
-            ControleAcessoInstituicao controleAcesso) {
+    public TurmaService(TurmaRepository turmaRepository, CursoService cursoService, ControleAcessoInstituicao controleAcesso) {
 
         this.turmaRepository = turmaRepository;
         this.cursoService = cursoService;
@@ -40,21 +34,13 @@ public class TurmaService {
     @Transactional(readOnly = true)
     public List<TurmaResposta> listarTodas() {
 
-        List<Turma> turmas = controleAcesso.administradorGeral()
-                ? turmaRepository.buscarTodasComRelacionamentos()
-                : turmaRepository.buscarPorInstituicaoComRelacionamentos(
-                        controleAcesso.instituicaoId()
-                );
+        List<Turma> turmas = controleAcesso.administradorGeral() ? turmaRepository.buscarTodasComRelacionamentos() : turmaRepository.buscarPorInstituicaoComRelacionamentos(controleAcesso.instituicaoId());
 
-        return turmas
-                .stream()
-                .map(this::converter)
-                .toList();
+        return turmas.stream().map(this::converter).toList();
     }
 
     @Transactional(readOnly = true)
     public TurmaResposta buscarPorId(Long id) {
-
         return converter(obterTurma(id));
     }
 
@@ -63,11 +49,7 @@ public class TurmaService {
 
         obterCursoAutorizado(cursoId);
 
-        return turmaRepository
-                .buscarPorCursoComRelacionamentos(cursoId)
-                .stream()
-                .map(this::converter)
-                .toList();
+        return turmaRepository.buscarPorCursoComRelacionamentos(cursoId).stream().map(this::converter).toList();
     }
 
     @Transactional
@@ -76,10 +58,7 @@ public class TurmaService {
 
         validarDatas(dados);
 
-        Turma turma = DataMapper.parseObject(
-                dados,
-                Turma.class
-        );
+        Turma turma = new Turma();
 
         configurarCampos(turma, dados);
 
@@ -90,18 +69,11 @@ public class TurmaService {
 
     @Transactional
     @PreAuthorize(GERENCIAR_TURMAS)
-    public TurmaResposta atualizar(
-            Long id,
-            TurmaRequisicao dados) {
+    public TurmaResposta atualizar(Long id, TurmaRequisicao dados) {
 
         validarDatas(dados);
 
         Turma turma = obterTurma(id);
-
-        DataMapper.copiarPropriedades(
-                dados,
-                turma
-        );
 
         configurarCampos(turma, dados);
 
@@ -119,25 +91,15 @@ public class TurmaService {
 
     @Transactional
     @PreAuthorize(GERENCIAR_VINCULOS)
-    public TurmaResposta vincularAluno(
-            Long turmaId,
-            VinculoAlunoRequisicao dados) {
+    public TurmaResposta vincularAluno(Long turmaId, VinculoAlunoRequisicao dados) {
 
         Turma turma = obterTurma(turmaId);
 
-        verificarVinculo(
-                turma,
-                dados.getAlunoId()
-        );
+        verificarVinculo(turma, dados.getAlunoId());
 
-        VinculoAluno vinculo = DataMapper.parseObject(
-                dados,
-                VinculoAluno.class
-        );
+        VinculoAluno vinculo = DataMapper.parseObject(dados, VinculoAluno.class);
 
-        vinculo.setSituacao(
-                vinculo.getSituacao().trim()
-        );
+        vinculo.setSituacao(vinculo.getSituacao().trim());
 
         turma.getAlunos().add(vinculo);
 
@@ -146,90 +108,45 @@ public class TurmaService {
 
     @Transactional
     @PreAuthorize(GERENCIAR_VINCULOS)
-    public TurmaResposta atualizarVinculo(
-            Long turmaId,
-            Long alunoId,
-            VinculoAlunoRequisicao dados) {
+    public TurmaResposta atualizarVinculo(Long turmaId, Long alunoId, VinculoAlunoRequisicaoAtualizar dados) {
 
         Turma turma = obterTurma(turmaId);
 
-        if (!alunoId.equals(dados.getAlunoId())) {
-            throw new RegraNegocioException(
-                    "O identificador do aluno não pode ser alterado"
-            );
-        }
+        VinculoAluno vinculo = obterVinculo(turma, alunoId);
 
-        VinculoAluno vinculo = obterVinculo(
-                turma,
-                alunoId
-        );
-
-        vinculo.setSituacao(
-                dados.getSituacao().trim()
-        );
+        vinculo.setSituacao(dados.getSituacao().trim());
 
         return converter(turma);
     }
 
     @Transactional
     @PreAuthorize(GERENCIAR_VINCULOS)
-    public void desvincularAluno(
-            Long turmaId,
-            Long alunoId) {
+    public void desvincularAluno(Long turmaId, Long alunoId) {
 
         Turma turma = obterTurma(turmaId);
 
-        VinculoAluno vinculo = obterVinculo(
-                turma,
-                alunoId
-        );
+        VinculoAluno vinculo = obterVinculo(turma, alunoId);
 
         turma.getAlunos().remove(vinculo);
     }
 
-    private void verificarVinculo(
-            Turma turma,
-            Long alunoId) {
+    private void verificarVinculo(Turma turma, Long alunoId) {
 
-        boolean jaVinculado = turma.getAlunos()
-                .stream()
-                .anyMatch(vinculo ->
-                        vinculo.getAlunoId().equals(alunoId)
-                );
+        boolean jaVinculado = turma.getAlunos().stream().anyMatch(vinculo -> vinculo.getAlunoId().equals(alunoId));
 
         if (jaVinculado) {
-            throw new RegraNegocioException(
-                    "Aluno já vinculado à turma"
-            );
+            throw new RegraNegocioException("Aluno já vinculado à turma");
         }
     }
 
-    private VinculoAluno obterVinculo(
-            Turma turma,
-            Long alunoId) {
+    private VinculoAluno obterVinculo(Turma turma, Long alunoId) {
 
-        return turma.getAlunos()
-                .stream()
-                .filter(vinculo ->
-                        vinculo.getAlunoId().equals(alunoId)
-                )
-                .findFirst()
-                .orElseThrow(() ->
-                        new RecursoNaoEncontradoException(
-                                "Aluno não vinculado à turma: " + alunoId
-                        )
-                );
+        return turma.getAlunos().stream().filter(vinculo -> vinculo.getAlunoId().equals(alunoId)).findFirst().orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não vinculado à turma: " + alunoId));
     }
 
     private Turma obterTurma(Long id) {
 
-        Turma turma = turmaRepository
-                .buscarPorIdComRelacionamentos(id)
-                .orElseThrow(() ->
-                        new RecursoNaoEncontradoException(
-                                "Turma não encontrada: " + id
-                        )
-                );
+        Turma turma = turmaRepository.buscarPorIdComRelacionamentos(id).orElseThrow(() -> new RecursoNaoEncontradoException("Turma não encontrada: " + id));
 
         validarInstituicao(turma.getCurso());
 
@@ -247,66 +164,40 @@ public class TurmaService {
 
     private void validarInstituicao(Curso curso) {
 
-        Long instituicaoId = curso.getInstituicao() != null
-                ? curso.getInstituicao().getId()
-                : null;
+        Long instituicaoId = curso.getInstituicao() != null ? curso.getInstituicao().getId() : null;
 
         controleAcesso.validarInstituicao(instituicaoId);
     }
 
     private void validarDatas(TurmaRequisicao dados) {
 
-        if (dados.getInicioAula() != null
-                && dados.getFimAula() != null
-                && dados.getFimAula().isBefore(
-                dados.getInicioAula())) {
+        if (dados.getInicioAula() != null && dados.getFimAula() != null && dados.getFimAula().isBefore(dados.getInicioAula())) {
 
-            throw new RegraNegocioException(
-                    "O fim das aulas não pode anteceder o início"
-            );
+            throw new RegraNegocioException("O fim das aulas não pode anteceder o início");
         }
     }
 
-    private void configurarCampos(
-            Turma turma,
-            TurmaRequisicao dados) {
+    private void configurarCampos(Turma turma, TurmaRequisicao dados) {
 
-        turma.setNome(
-                turma.getNome().trim()
-        );
+        Curso curso = obterCursoAutorizado(dados.getCursoId());
 
-        turma.setTurno(
-                turma.getTurno().trim()
-        );
-
+        turma.setAno(dados.getAno());
+        turma.setNome(dados.getNome().trim());
+        turma.setTurno(dados.getTurno().trim());
         turma.setSala(dados.getSala());
         turma.setInicioAula(dados.getInicioAula());
         turma.setFimAula(dados.getFimAula());
-
-        Curso curso = obterCursoAutorizado(
-                dados.getCursoId()
-        );
 
         turma.setCurso(curso);
     }
 
     private TurmaResposta converter(Turma turma) {
 
-        TurmaResposta resposta = DataMapper.parseObject(
-                turma,
-                TurmaResposta.class
-        );
+        TurmaResposta resposta = DataMapper.parseObject(turma, TurmaResposta.class);
 
-        resposta.setCursoId(
-                turma.getCurso().getId()
-        );
+        resposta.setCursoId(turma.getCurso().getId());
 
-        resposta.setAlunos(
-                DataMapper.parseListObjects(
-                        turma.getAlunos(),
-                        VinculoAlunoResposta.class
-                )
-        );
+        resposta.setAlunos(DataMapper.parseListObjects(turma.getAlunos(), VinculoAlunoResposta.class));
 
         return resposta;
     }

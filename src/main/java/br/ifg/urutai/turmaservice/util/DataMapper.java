@@ -4,6 +4,7 @@ package br.ifg.urutai.turmaservice.util;
 import br.ifg.urutai.turmaservice.dto.CursoRequisicao;
 import br.ifg.urutai.turmaservice.dto.CursoResposta;
 import br.ifg.urutai.turmaservice.model.Curso;
+import org.modelmapper.convention.MatchingStrategies;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -23,15 +24,17 @@ public class DataMapper {
     private static void configurarMapper() {
 
         mapper.getConfiguration()
+                .setMatchingStrategy(MatchingStrategies.STRICT)
                 .setAmbiguityIgnored(true)
                 .setSkipNullEnabled(true);
 
         mapper.createTypeMap(
                 CursoRequisicao.class,
                 Curso.class
-        ).addMappings(mapeamento ->
-                mapeamento.skip(Curso::setInstituicao)
-        );
+        ).addMappings(mapeamento -> {
+            mapeamento.skip(Curso::setId);
+            mapeamento.skip(Curso::setInstituicao);
+        });
 
         mapper.createTypeMap(
                 Curso.class,
