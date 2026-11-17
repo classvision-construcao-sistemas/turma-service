@@ -24,9 +24,6 @@ public class CursoRequisicaoPatch {
             message = "A situação não pode estar em branco")
     private String situacao;
 
-    @Positive
-    private Long instituicaoId;
-
     public CursoRequisicaoPatch() {
     }
 
@@ -52,13 +49,5 @@ public class CursoRequisicaoPatch {
 
     public void setSituacao(String situacao) {
         this.situacao = situacao;
-    }
-
-    public Long getInstituicaoId() {
-        return instituicaoId;
-    }
-
-    public void setInstituicaoId(Long instituicaoId) {
-        this.instituicaoId = instituicaoId;
     }
 }

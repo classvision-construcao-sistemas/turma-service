@@ -49,8 +49,11 @@ public class CursoController {
 
     @PutMapping("/{id}")
     @PreAuthorize(GERENCIAMENTO)
-    @Operation(summary = "Atualizar")
-    public CursoResposta atualizar(@PathVariable Long id, @Valid @RequestBody CursoRequisicao dados) {
+    @Operation(summary = "Atualizar curso")
+    public CursoResposta atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody CursoRequisicaoAtualizar dados) {
+
         return cursoService.atualizar(id, dados);
     }
 

@@ -66,30 +66,31 @@ public class CursoService {
         return converter(cursoRepository.save(curso));
     }
 
+
     @Transactional
-    public CursoResposta atualizar(Long id, CursoRequisicao dados) {
+    public CursoResposta atualizar(
+            Long id,
+            CursoRequisicaoAtualizar dados) {
 
         Curso curso = obterCursoAutorizado(id);
 
-        controleAcesso.validarInstituicao(dados.getInstituicaoId());
-
         String codigo = dados.getCodigo().trim();
 
-        if (cursoRepository.existsByCodigoIgnoreCaseAndIdNot(codigo, id)) {
+        if (cursoRepository.existsByCodigoIgnoreCaseAndIdNot(
+                codigo, id)) {
 
-            throw new RegraNegocioException("Código de curso já cadastrado");
+            throw new RegraNegocioException(
+                    "Código de curso já cadastrado"
+            );
         }
-
-        Instituicao instituicao = obterInstituicao(dados.getInstituicaoId());
 
         curso.setCodigo(codigo);
         curso.setNome(dados.getNome().trim());
         curso.setSituacao(dados.getSituacao().trim());
 
-        curso.setInstituicao(instituicao);
-
         return converter(curso);
     }
+
 
 
     @Transactional
@@ -114,15 +115,6 @@ public class CursoService {
 
         if (dados.getSituacao() != null) {
             curso.setSituacao(dados.getSituacao().trim());
-        }
-
-        if (dados.getInstituicaoId() != null) {
-
-            controleAcesso.validarInstituicao(dados.getInstituicaoId());
-
-            Instituicao instituicao = obterInstituicao(dados.getInstituicaoId());
-
-            curso.setInstituicao(instituicao);
         }
 
         return converter(curso);
@@ -169,4 +161,6 @@ public class CursoService {
 
         return resposta;
     }
+
+
 }
