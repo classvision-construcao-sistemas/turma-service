@@ -5,8 +5,10 @@ import br.ifg.urutai.turmaservice.dto.*;
 import br.ifg.urutai.turmaservice.model.*;
 import br.ifg.urutai.turmaservice.repository.TurmaRepository;
 import br.ifg.urutai.turmaservice.exception.*;
+import br.ifg.urutai.turmaservice.security.ControleAcessoInstituicao;
 import br.ifg.urutai.turmaservice.util.DataMapper;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,22 +17,36 @@ import java.util.List;
 @Service
 public class TurmaService {
 
+    private static final String GERENCIAR_TURMAS =
+            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR')";
+
+    private static final String GERENCIAR_VINCULOS =
+            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR', 'SECRETARIO')";
+
     private final TurmaRepository turmaRepository;
     private final CursoService cursoService;
+    private final ControleAcessoInstituicao controleAcesso;
 
     public TurmaService(
             TurmaRepository turmaRepository,
-            CursoService cursoService) {
+            CursoService cursoService,
+            ControleAcessoInstituicao controleAcesso) {
 
         this.turmaRepository = turmaRepository;
         this.cursoService = cursoService;
+        this.controleAcesso = controleAcesso;
     }
 
     @Transactional(readOnly = true)
     public List<TurmaResposta> listarTodas() {
 
-        return turmaRepository
-                .buscarTodasComRelacionamentos()
+        List<Turma> turmas = controleAcesso.administradorGeral()
+                ? turmaRepository.buscarTodasComRelacionamentos()
+                : turmaRepository.buscarPorInstituicaoComRelacionamentos(
+                        controleAcesso.instituicaoId()
+                );
+
+        return turmas
                 .stream()
                 .map(this::converter)
                 .toList();
@@ -45,7 +61,7 @@ public class TurmaService {
     @Transactional(readOnly = true)
     public List<TurmaResposta> listarPorCurso(Long cursoId) {
 
-        cursoService.obterCurso(cursoId);
+        obterCursoAutorizado(cursoId);
 
         return turmaRepository
                 .buscarPorCursoComRelacionamentos(cursoId)
@@ -55,6 +71,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_TURMAS)
     public TurmaResposta cadastrar(TurmaRequisicao dados) {
 
         validarDatas(dados);
@@ -72,6 +89,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_TURMAS)
     public TurmaResposta atualizar(
             Long id,
             TurmaRequisicao dados) {
@@ -91,6 +109,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_TURMAS)
     public void excluir(Long id) {
 
         Turma turma = obterTurma(id);
@@ -99,6 +118,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_VINCULOS)
     public TurmaResposta vincularAluno(
             Long turmaId,
             VinculoAlunoRequisicao dados) {
@@ -125,6 +145,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_VINCULOS)
     public TurmaResposta atualizarVinculo(
             Long turmaId,
             Long alunoId,
@@ -151,6 +172,7 @@ public class TurmaService {
     }
 
     @Transactional
+    @PreAuthorize(GERENCIAR_VINCULOS)
     public void desvincularAluno(
             Long turmaId,
             Long alunoId) {
@@ -201,13 +223,35 @@ public class TurmaService {
 
     private Turma obterTurma(Long id) {
 
-        return turmaRepository
+        Turma turma = turmaRepository
                 .buscarPorIdComRelacionamentos(id)
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException(
                                 "Turma não encontrada: " + id
                         )
                 );
+
+        validarInstituicao(turma.getCurso());
+
+        return turma;
+    }
+
+    private Curso obterCursoAutorizado(Long cursoId) {
+
+        Curso curso = cursoService.obterCurso(cursoId);
+
+        validarInstituicao(curso);
+
+        return curso;
+    }
+
+    private void validarInstituicao(Curso curso) {
+
+        Long instituicaoId = curso.getInstituicao() != null
+                ? curso.getInstituicao().getId()
+                : null;
+
+        controleAcesso.validarInstituicao(instituicaoId);
     }
 
     private void validarDatas(TurmaRequisicao dados) {
@@ -239,7 +283,7 @@ public class TurmaService {
         turma.setInicioAula(dados.getInicioAula());
         turma.setFimAula(dados.getFimAula());
 
-        Curso curso = cursoService.obterCurso(
+        Curso curso = obterCursoAutorizado(
                 dados.getCursoId()
         );
 
