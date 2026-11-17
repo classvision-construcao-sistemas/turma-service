@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -79,6 +80,66 @@ public class TurmaService {
 
         return converter(turma);
     }
+
+
+    @Transactional
+    @PreAuthorize(GERENCIAR_TURMAS)
+    public TurmaResposta atualizarParcialmente(Long id, TurmaRequisicaoPatch dados) {
+
+        Turma turma = obterTurma(id);
+
+        Curso curso = null;
+
+        // Valida o curso de destino, caso informado.
+        if (dados.getCursoId() != null) {
+            curso = obterCursoAutorizado(dados.getCursoId());
+        }
+
+        // Considera os valores atuais caso uma
+        // das datas não tenha sido enviada.
+        LocalDate inicio = dados.getInicioAula() != null ? dados.getInicioAula() : turma.getInicioAula();
+
+        LocalDate fim = dados.getFimAula() != null ? dados.getFimAula() : turma.getFimAula();
+
+        if (inicio != null && fim != null && fim.isBefore(inicio)) {
+
+            throw new RegraNegocioException("O fim das aulas não pode anteceder o início");
+        }
+
+        // Atualiza somente os campos informados.
+        if (dados.getAno() != null) {
+            turma.setAno(dados.getAno());
+        }
+
+        if (dados.getNome() != null) {
+            turma.setNome(dados.getNome().trim());
+        }
+
+        if (dados.getTurno() != null) {
+            turma.setTurno(dados.getTurno().trim());
+        }
+
+        if (dados.getSala() != null) {
+            turma.setSala(dados.getSala());
+        }
+
+        if (dados.getInicioAula() != null) {
+            turma.setInicioAula(dados.getInicioAula());
+        }
+
+        if (dados.getFimAula() != null) {
+            turma.setFimAula(dados.getFimAula());
+        }
+
+        // Altera o relacionamento apenas
+        // quando um curso foi informado.
+        if (curso != null) {
+            turma.setCurso(curso);
+        }
+
+        return converter(turma);
+    }
+
 
     @Transactional
     @PreAuthorize(GERENCIAR_TURMAS)

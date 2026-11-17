@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+
 //teste
 @RestController
 @RequestMapping("/turmas")
@@ -43,6 +44,15 @@ public class TurmaController {
     public TurmaResposta atualizar(@PathVariable Long id, @Valid @RequestBody TurmaRequisicao dados) {
         return turmaService.atualizar(id, dados);
     }
+
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Atualizar parcialmente uma turma")
+    public TurmaResposta atualizarParcialmente(@PathVariable Long id, @Valid @RequestBody TurmaRequisicaoPatch dados) {
+
+        return turmaService.atualizarParcialmente(id, dados);
+    }
+
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

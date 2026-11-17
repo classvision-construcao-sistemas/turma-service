@@ -91,6 +91,44 @@ public class CursoService {
         return converter(curso);
     }
 
+
+    @Transactional
+    public CursoResposta atualizarParcialmente(Long id, CursoRequisicaoPatch dados) {
+
+        Curso curso = obterCursoAutorizado(id);
+
+        if (dados.getCodigo() != null) {
+
+            String codigo = dados.getCodigo().trim();
+
+            if (cursoRepository.existsByCodigoIgnoreCaseAndIdNot(codigo, id)) {
+                throw new RegraNegocioException("Código de curso já cadastrado");
+            }
+
+            curso.setCodigo(codigo);
+        }
+
+        if (dados.getNome() != null) {
+            curso.setNome(dados.getNome().trim());
+        }
+
+        if (dados.getSituacao() != null) {
+            curso.setSituacao(dados.getSituacao().trim());
+        }
+
+        if (dados.getInstituicaoId() != null) {
+
+            controleAcesso.validarInstituicao(dados.getInstituicaoId());
+
+            Instituicao instituicao = obterInstituicao(dados.getInstituicaoId());
+
+            curso.setInstituicao(instituicao);
+        }
+
+        return converter(curso);
+    }
+
+
     @Transactional
     public void excluir(Long id) {
 

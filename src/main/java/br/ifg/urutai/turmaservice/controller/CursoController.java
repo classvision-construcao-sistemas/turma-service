@@ -16,11 +16,9 @@ import java.util.List;
 @Tag(name = "Cursos", description = "Gerenciamento de cursos")
 public class CursoController {
 
-    private static final String CONSULTA =
-            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR', 'PROFESSOR', 'SECRETARIO', 'ASSISTENTE')";
+    private static final String CONSULTA = "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR', 'PROFESSOR', 'SECRETARIO', 'ASSISTENTE')";
 
-    private static final String GERENCIAMENTO =
-            "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR')";
+    private static final String GERENCIAMENTO = "hasAnyRole('ADMINISTRADOR', 'ADMIN_INSTITUICAO', 'COORDENADOR')";
 
     private final CursoService cursoService;
 
@@ -55,6 +53,16 @@ public class CursoController {
     public CursoResposta atualizar(@PathVariable Long id, @Valid @RequestBody CursoRequisicao dados) {
         return cursoService.atualizar(id, dados);
     }
+
+
+    @PatchMapping("/{id}")
+    @PreAuthorize(GERENCIAMENTO)
+    @Operation(summary = "Atualizar parcialmente um curso")
+    public CursoResposta atualizarParcialmente(@PathVariable Long id, @Valid @RequestBody CursoRequisicaoPatch dados) {
+
+        return cursoService.atualizarParcialmente(id, dados);
+    }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize(GERENCIAMENTO)
